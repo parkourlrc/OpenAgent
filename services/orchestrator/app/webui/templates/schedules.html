@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ _("schedules.title") }}</h1>
+
+<section class="card">
+  <h2>{{ _("schedules.create") }}</h2>
+  <form id="schedule-form">
+    <label>{{ _("common.name") }} <input name="name" required /></label>
+    <label>{{ _("schedules.cron") }} <input name="cron_expr" placeholder="*/30 * * * *" required /></label>
+    <label>{{ _("schedules.workspace") }}
+      <select name="workspace_id" required>
+        {% for w in workspaces %}
+          <option value="{{ w.id }}">{{ w.name }} ({{ w.id }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ _("schedules.skill") }}
+      <select name="skill_id" required>
+        {% for s in skills %}
+          <option value="{{ s.id }}">{{ s.name }} ({{ s.id }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ _("schedules.mode") }}
+      <select name="mode">
+        <option value="fast">fast</option>
+        <option value="pro">pro</option>
+      </select>
+    </label>
+    <label>{{ _("schedules.goal_opt") }}
+      <textarea name="goal" rows="2"></textarea>
+    </label>
+    <button type="button" onclick="createSchedule()">{{ _("schedules.create_btn") }}</button>
+  </form>
+  <p class="hint">{{ _("schedules.hint") }}</p>
+</section>
+
+<section class="card">
+  <h2>{{ _("schedules.all") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("common.id") }}</th><th>{{ _("common.name") }}</th><th>Cron</th><th>{{ _("schedules.enabled") }}</th><th>{{ _("schedules.next") }}</th><th>{{ _("schedules.last") }}</th></tr></thead>
+    <tbody>
+      {% for s in schedules %}
+      <tr>
+        <td><code>{{ s.id }}</code></td>
+        <td>{{ s.name }}</td>
+        <td><code>{{ s.cron_expr }}</code></td>
+        <td>{{ _("task.yes") if s.enabled else _("task.no") }}</td>
+        <td>{{ s.next_run_at }}</td>
+        <td>{{ s.last_run_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<script>
+async function createSchedule() {
+  const form = document.getElementById('schedule-form');
+  const fd = new FormData(form);
+  const payload = {
+    name: fd.get('name'),
+    cron_expr: fd.get('cron_expr'),
+    workspace_id: fd.get('workspace_id'),
+    skill_id: fd.get('skill_id'),
+    mode: fd.get('mode'),
+    enabled: true,
+    payload: { goal: fd.get('goal') || null }
+  };
+  const res = await fetch('/api/schedules?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (res.ok) {
+    location.reload();
+  } else {
+    alert('Failed: ' + await res.text());
+  }
+}
+</script>
+{% endblock %}

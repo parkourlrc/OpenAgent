@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="settings-layout">
+  <aside class="settings-nav" data-no-copy="1">
+    <div class="settings-nav-title">{{ "设置" if lang == "zh" else "Settings" }}</div>
+    <button class="settings-tab" type="button" data-settings-tab="model">{{ "模型配置" if lang == "zh" else "Model" }}</button>
+    <button class="settings-tab" type="button" data-settings-tab="skills">{{ "Skills" if lang == "zh" else "Skills" }}</button>
+    <button class="settings-tab" type="button" data-settings-tab="mcp">MCP</button>
+    <button class="settings-tab" type="button" data-settings-tab="data">{{ "数据/日志" if lang == "zh" else "Data & Logs" }}</button>
+    <button class="settings-tab" type="button" data-settings-tab="permissions">{{ "权限" if lang == "zh" else "Permissions" }}</button>
+    <button class="settings-tab" type="button" data-settings-tab="about">{{ "语言/关于" if lang == "zh" else "Language & About" }}</button>
+  </aside>
+
+  <div class="settings-main">
+    <section class="settings-panel" data-settings-panel="model">
+      <div class="settings-panel-title">{{ "模型配置" if lang == "zh" else "Model configuration" }}</div>
+
+      <section class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <h2 style="margin:4px 0 10px 0;">{{ "模型配置" if lang == "zh" else "Model settings" }}</h2>
+          <button type="button" onclick="openApiSite()">{{ "获取API" if lang == "zh" else "Get API" }}</button>
+        </div>
+        <form id="provider-form">
+          <label>OPENAI_BASE_URL
+            <input name="OPENAI_BASE_URL" value="{{ provider.OPENAI_BASE_URL }}" />
+          </label>
+          <label>OPENAI_API_KEY
+            <input name="OPENAI_API_KEY" value="{{ provider.OPENAI_API_KEY }}" type="password" />
+            <div class="field-help">{{ "修改后会立即生效（当前进程内），并写入本地配置文件。" if lang == "zh" else "Changes apply immediately (in-process) and are saved locally." }}</div>
+          </label>
+          <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+            <label>OPENAI_MODEL_FAST
+              <input name="OPENAI_MODEL_FAST" value="{{ provider.OPENAI_MODEL_FAST }}" />
+            </label>
+            <label>OPENAI_MODEL_PRO
+              <input name="OPENAI_MODEL_PRO" value="{{ provider.OPENAI_MODEL_PRO }}" />
+            </label>
+          </div>
+          <label>OPENAI_MODEL_EMBEDDINGS
+            <input name="OPENAI_MODEL_EMBEDDINGS" value="{{ provider.OPENAI_MODEL_EMBEDDINGS }}" />
+          </label>
+          <button type="button" onclick="saveProvider()">{{ "保存" if lang == "zh" else "Save" }}</button>
+          <span id="provider-status" class="muted" style="margin-left:10px;"></span>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "输出与引用" if lang == "zh" else "Output & citations" }}</h2>
+        <form id="uak-form">
+          <label>UAK_CITATIONS_MODE
+            <select name="UAK_CITATIONS_MODE">
+              <option value="auto" {{ 'selected' if uak.UAK_CITATIONS_MODE == 'auto' else '' }}>{{ "自动（按需引用，推荐）" if lang == "zh" else "Auto (best-effort, recommended)" }}</option>
+              <option value="off" {{ 'selected' if uak.UAK_CITATIONS_MODE == 'off' else '' }}>{{ "关闭（永不强制引用）" if lang == "zh" else "Off (never enforce citations)" }}</option>
+              <option value="require" {{ 'selected' if uak.UAK_CITATIONS_MODE == 'require' else '' }}>{{ "强制（严格引用校验）" if lang == "zh" else "Require (strict citation enforcement)" }}</option>
+            </select>
+            <div class="field-help">
+              {{ "Auto：仅在任务确实需要证据时启用引用；当断网/权限拒绝/搜索源变化时，会尽量自愈并在必要时降级为 warning，而不是直接失败。" if lang == "zh" else "Auto enables citations only when needed; when evidence tools are unavailable (offline/denied/changed sources), it degrades to warnings instead of hard failing when possible." }}
+            </div>
+          </label>
+          <button type="button" onclick="saveUak()">{{ "保存" if lang == "zh" else "Save" }}</button>
+          <span id="uak-status" class="muted" style="margin-left:10px;"></span>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "连接" if lang == "zh" else "Connection" }}</h2>
+        <form id="desktop-form">
+          <label>OWB_HOST_MODE
+            <select name="OWB_HOST_MODE">
+              <option value="local" {{ 'selected' if desktop.OWB_HOST_MODE == 'local' else '' }}>{{ "本地(Host)" if lang == "zh" else "Local (Host)" }}</option>
+              <option value="remote" {{ 'selected' if desktop.OWB_HOST_MODE == 'remote' else '' }}>{{ "远程(Client)" if lang == "zh" else "Remote (Client)" }}</option>
+            </select>
+            <div class="field-help">{{ "本地模式会在本机启动后端；远程模式只打开一个远程 Workbench URL。" if lang == "zh" else "Local starts an embedded backend. Remote opens a remote Workbench URL." }}</div>
+          </label>
+          <label>OWB_REMOTE_URL
+            <input name="OWB_REMOTE_URL" value="{{ desktop.OWB_REMOTE_URL }}" placeholder="https://workbench.example.com" />
+          </label>
+          <label>OWB_REMOTE_TOKEN
+            <input name="OWB_REMOTE_TOKEN" value="{{ desktop.OWB_REMOTE_TOKEN }}" type="password" placeholder="{{ '可选：远程 admin token' if lang == 'zh' else 'Optional: remote admin token' }}" />
+            <div class="field-help">{{ "桌面端需要重启后生效。" if lang == "zh" else "Restart the desktop app to apply." }}</div>
+          </label>
+          <button type="button" onclick="saveDesktop()">{{ "保存" if lang == "zh" else "Save" }}</button>
+          <span id="desktop-status" class="muted" style="margin-left:10px;"></span>
+        </form>
+      </section>
+    </section>
+
+    <section class="settings-panel" data-settings-panel="skills">
+      <div class="settings-panel-title">Skills</div>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "安装/导入" if lang == "zh" else "Install / import" }}</h2>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap:14px;">
+          <div>
+            <div class="muted" style="margin-bottom:8px;">{{ "从本地 YAML 路径导入（适合开发/调试）" if lang == "zh" else "Import from a local YAML path (dev/debug)" }}</div>
+            <form method="post" action="/ui/skills/import">
+              <input type="hidden" name="token" value="{{ admin_token }}" />
+              <label>{{ _("skills.yaml_path") }}
+                <input name="yaml_path" value="" placeholder="{{ (data_dir ~ '\\\\skills_downloads\\\\skill.yaml') if lang == 'zh' else (data_dir ~ '\\\\skills_downloads\\\\skill.yaml') }}" required />
+              </label>
+              <button type="submit">{{ _("skills.import_btn") }}</button>
+            </form>
+          </div>
+          <div>
+            <div class="muted" style="margin-bottom:8px;">{{ "从 URL 安装 YAML（保存到 DATA_DIR/skills_downloads）" if lang == "zh" else "Install YAML from URL (saved to DATA_DIR/skills_downloads)" }}</div>
+            <form onsubmit="event.preventDefault(); installSkillUrl();">
+              <input id="skill-url" placeholder="https://raw.githubusercontent.com/.../skill.yaml" />
+              <button type="submit">{{ "安装" if lang == "zh" else "Install" }}</button>
+              <span id="skill-url-status" class="muted" style="margin-left:10px;"></span>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ _("skills.all") }}</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{{ _("common.name") }}</th>
+              <th>{{ "启用" if lang == "zh" else "Enabled" }}</th>
+              <th>{{ _("skills.default_mode") }}</th>
+              <th>{{ _("skills.allowed_tools") }}</th>
+              <th>{{ _("skills.description") }}</th>
+              <th>{{ "操作" if lang == "zh" else "Actions" }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in skills %}
+            <tr>
+              <td style="min-width:180px;">
+                <div style="font-weight:700;">{{ s.name }}</div>
+                <div class="muted" style="font-size:0.85rem;"><code>{{ s.id }}</code></div>
+                {% if s.source_display %}<div class="muted" style="font-size:0.85rem; overflow-wrap:anywhere;">{{ s.source_display }}</div>{% endif %}
+              </td>
+              <td style="white-space:nowrap;">
+                <label style="display:flex; align-items:center; gap:8px; margin:0;">
+                  <input type="checkbox" {{ 'checked' if s.enabled else '' }} onchange="toggleSkill({{ s.id | tojson }}, this.checked)" />
+                  <span class="muted" style="font-size:0.85rem;">
+                    {% if lang == "zh" %}{{ "已启用" if s.enabled else "已禁用" }}{% else %}{{ "on" if s.enabled else "off" }}{% endif %}
+                  </span>
+                </label>
+              </td>
+              <td>{{ s.default_mode }}</td>
+              <td class="tools" style="min-width:240px;">
+                {% for t in (s.allowed_tools or []) %}
+                  <code>{{ t }}</code>
+                {% endfor %}
+                {% if not s.allowed_tools %}<span class="muted">{{ _("skills.all_tools") }}</span>{% endif %}
+              </td>
+              <td style="min-width:240px;">{{ s.description }}</td>
+              <td style="white-space:nowrap;">
+                <button type="button" onclick="reloadSkill({{ s.id | tojson }})">{{ "更新" if lang == "zh" else "Reload" }}</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </section>
+
+    <section class="settings-panel" data-settings-panel="mcp">
+      <div class="settings-panel-title">MCP</div>
+
+      <section class="card">
+        <div class="muted" style="margin-bottom:10px;">
+          {{ "这里先提供 MCP Server 的注册/启用/健康检查（MCP 工具桥接会在下一步把已启用的 server 注入到 UAK kernel）。" if lang == "zh" else "Registry/enable/healthcheck for MCP servers (enabled servers will be injected into the UAK kernel next)." }}
+        </div>
+        <form id="mcp-form" class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+          <input type="hidden" id="mcp-id" name="id" value="" />
+          <input type="hidden" id="mcp-env" name="env_json" value="" />
+          <label>{{ "名称" if lang == "zh" else "Name" }}<input name="name" placeholder="filesystem-mcp" /></label>
+          <label>{{ "命令" if lang == "zh" else "Command" }}<input name="command" placeholder="node" /></label>
+          <label>Args <input name="args" placeholder="server.js --stdio" /></label>
+          <label>Healthcheck Args <input name="healthcheck_args" placeholder="--version" /></label>
+          <label>{{ "启用" if lang == "zh" else "Enabled" }}
+            <select name="enabled">
+              <option value="1">{{ "是" if lang == "zh" else "Yes" }}</option>
+              <option value="0">{{ "否" if lang == "zh" else "No" }}</option>
+            </select>
+          </label>
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button id="mcp-submit" type="button" onclick="upsertMcp()">{{ "添加" if lang == "zh" else "Add" }}</button>
+            <button id="mcp-cancel" type="button" onclick="cancelMcpEdit()" style="display:none;">{{ "取消" if lang == "zh" else "Cancel" }}</button>
+            <span id="mcp-status" class="muted"></span>
+          </div>
+        </form>
+
+        <table class="table" style="margin-top:10px;">
+          <thead><tr><th>{{ "名称" if lang == "zh" else "Name" }}</th><th>{{ "启用" if lang == "zh" else "Enabled" }}</th><th>{{ "命令" if lang == "zh" else "Command" }}</th><th>{{ "操作" if lang == "zh" else "Actions" }}</th></tr></thead>
+          <tbody>
+            {% for m in (mcp_servers or []) %}
+            <tr>
+              <td>{{ m.name }}{% if not m.enabled %} <span class="muted">(disabled)</span>{% endif %}</td>
+              <td style="white-space:nowrap;">
+                <label style="display:flex; align-items:center; gap:8px; margin:0;">
+                  <input type="checkbox" {{ 'checked' if m.enabled else '' }} onchange="setMcpEnabled({{ m | tojson }}, this.checked)" />
+                  <span class="muted" style="font-size:0.85rem;">{% if lang == "zh" %}{{ "开" if m.enabled else "关" }}{% else %}{{ "on" if m.enabled else "off" }}{% endif %}</span>
+                </label>
+              </td>
+              <td><code>{{ m.command }} {{ (m.args or []) | join(' ') }}</code></td>
+              <td style="white-space:nowrap;">
+                <button type="button" onclick="editMcp({{ m | tojson }})">{{ "编辑" if lang == "zh" else "Edit" }}</button>
+                <button type="button" onclick="healthMcp({{ m.id | tojson }})">{{ "健康检查" if lang == "zh" else "Health" }}</button>
+                <button type="button" onclick="deleteMcp({{ m.id | tojson }})">{{ "删除" if lang == "zh" else "Delete" }}</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </section>
+
+    <section class="settings-panel" data-settings-panel="data">
+      <div class="settings-panel-title">{{ "数据/日志" if lang == "zh" else "Data & logs" }}</div>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "默认工作区" if lang == "zh" else "Default workspace" }}</h2>
+        <form method="post" action="/ui/settings/workspace">
+          <input type="hidden" name="token" value="{{ admin_token }}" />
+          <label>{{ _("runs.workspace") }}
+            <select name="default_workspace_id" required>
+              {% for w in workspaces %}
+                <option value="{{ w.id }}" {{ 'selected' if w.id == default_workspace_id else '' }}>{{ w.name }} ({{ w.id }})</option>
+              {% endfor %}
+            </select>
+            <div class="field-help">{{ _("runs.workspace.help") }}</div>
+          </label>
+          <button type="submit">{{ "保存" if lang == "zh" else "Save" }}</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <h2 style="margin:4px 0 10px 0;">{{ "配方/模板" if lang == "zh" else "Recipes" }}</h2>
+          <a class="pill" href="/recipes">{{ "管理" if lang == "zh" else "Manage" }}</a>
+        </div>
+        <div class="muted">{{ "数量" if lang == "zh" else "Count" }}: {{ recipe_count }}</div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "诊断" if lang == "zh" else "Diagnostics" }}</h2>
+        <div class="muted" style="margin-bottom:10px;">{{ "导出诊断包（会自动脱敏 API Key/Token）。" if lang == "zh" else "Export a diagnostics zip (API keys/tokens are redacted)." }}</div>
+        <a class="pill" href="/api/diagnostics/export?token={{ admin_token }}">{{ "导出诊断包" if lang == "zh" else "Export diagnostics" }}</a>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "日志" if lang == "zh" else "Logs" }}</h2>
+        <div class="muted" style="margin-bottom:8px;">
+          {{ "用于排查“按键没反应/卡住/无输出”等问题。" if lang == "zh" else "For debugging cases like 'buttons not working' / 'stuck' / 'no output'." }}
+        </div>
+        <div class="muted">{{ "构建ID" if lang == "zh" else "Build" }}: <code>{{ build_id }}</code>{% if build_time %} <span class="muted">({{ build_time }})</span>{% endif %}</div>
+        <div class="muted">{{ "数据目录" if lang == "zh" else "Data directory" }}: <code>{{ data_dir }}</code></div>
+        <div class="muted">{{ "日志目录" if lang == "zh" else "Logs directory" }}: <code>{{ logs_dir }}</code></div>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <button type="button" onclick="openLogsDir()">{{ "打开日志目录" if lang == "zh" else "Open logs folder" }}</button>
+          <button type="button" onclick="loadLogs()">{{ "查看日志" if lang == "zh" else "View logs" }}</button>
+          <select id="log-name" data-no-copy="1" style="max-width:360px;">
+            <option value="workbench.log">workbench.log</option>
+            <option value="desktop-backend.err.log">desktop-backend.err.log</option>
+            <option value="desktop-backend.out.log">desktop-backend.out.log</option>
+            <option value="desktop-client.log">desktop-client.log</option>
+          </select>
+          <span class="muted" id="log-status" style="font-size:0.92rem;"></span>
+        </div>
+        <pre id="log-preview" class="pre" style="margin-top:10px; max-height:320px; overflow:auto;"></pre>
+      </section>
+    </section>
+
+    <section class="settings-panel" data-settings-panel="permissions">
+      <div class="settings-panel-title">{{ "权限" if lang == "zh" else "Permissions" }}</div>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "权限中心" if lang == "zh" else "Permission center" }}</h2>
+        <div class="muted" style="margin-bottom:10px;">
+          {{ "支持：询问一次 / 总是允许 / 总是拒绝（按工作区生效）。询问一次会在同一次任务内记住授权。" if lang == "zh" else "Policies: ask once / always allow / always deny (per workspace). Ask-once is remembered within a task." }}
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+          <div class="pill">{{ "工作区" if lang == "zh" else "Workspace" }}</div>
+          <select id="pol-ws">
+            {% for w in workspaces %}
+              <option value="{{ w.id }}" {{ 'selected' if w.id == default_workspace_id else '' }}>{{ w.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+          <label>{{ "Shell 执行" if lang == "zh" else "Shell exec" }}
+            <select id="pol-shell">
+              <option value="ask_once">{{ "询问一次" if lang == "zh" else "ask once" }}</option>
+              <option value="always_allow">{{ "总是允许" if lang == "zh" else "always allow" }}</option>
+              <option value="always_deny">{{ "总是拒绝" if lang == "zh" else "always deny" }}</option>
+            </select>
+          </label>
+          <label>{{ "文件写入/移动" if lang == "zh" else "File write/move" }}
+            <select id="pol-fs_write">
+              <option value="ask_once">{{ "询问一次" if lang == "zh" else "ask once" }}</option>
+              <option value="always_allow">{{ "总是允许" if lang == "zh" else "always allow" }}</option>
+              <option value="always_deny">{{ "总是拒绝" if lang == "zh" else "always deny" }}</option>
+            </select>
+          </label>
+          <label>{{ "文件删除" if lang == "zh" else "File delete" }}
+            <select id="pol-fs_delete">
+              <option value="ask_once">{{ "询问一次" if lang == "zh" else "ask once" }}</option>
+              <option value="always_allow">{{ "总是允许" if lang == "zh" else "always allow" }}</option>
+              <option value="always_deny">{{ "总是拒绝" if lang == "zh" else "always deny" }}</option>
+            </select>
+          </label>
+          <label>{{ "浏览器点击" if lang == "zh" else "Browser click" }}
+            <select id="pol-browser_click">
+              <option value="ask_once">{{ "询问一次" if lang == "zh" else "ask once" }}</option>
+              <option value="always_allow">{{ "总是允许" if lang == "zh" else "always allow" }}</option>
+              <option value="always_deny">{{ "总是拒绝" if lang == "zh" else "always deny" }}</option>
+            </select>
+          </label>
+          <label>{{ "网络访问(浏览器)" if lang == "zh" else "Network (browser)" }}
+            <select id="pol-network">
+              <option value="always_allow">{{ "总是允许(默认)" if lang == "zh" else "always allow (default)" }}</option>
+              <option value="ask_once">{{ "询问一次" if lang == "zh" else "ask once" }}</option>
+              <option value="always_deny">{{ "总是拒绝" if lang == "zh" else "always deny" }}</option>
+            </select>
+          </label>
+          <label>{{ "MCP 工具" if lang == "zh" else "MCP tools" }}
+            <select id="pol-mcp">
+              <option value="ask_once">{{ "询问一次(默认)" if lang == "zh" else "ask once (default)" }}</option>
+              <option value="always_allow">{{ "总是允许" if lang == "zh" else "always allow" }}</option>
+              <option value="always_deny">{{ "总是拒绝" if lang == "zh" else "always deny" }}</option>
+            </select>
+          </label>
+        </div>
+        <button type="button" onclick="savePolicies()">{{ "保存" if lang == "zh" else "Save" }}</button>
+        <span id="pol-status" class="muted" style="margin-left:10px;"></span>
+      </section>
+    </section>
+
+    <section class="settings-panel" data-settings-panel="about">
+      <div class="settings-panel-title">{{ "语言/关于" if lang == "zh" else "Language & About" }}</div>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "语言" if lang == "zh" else "Language" }}</h2>
+        <div class="muted" style="margin-bottom:8px;">{{ "切换后会在当前窗口立即生效。" if lang == "zh" else "Applies immediately in this window." }}</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="pill" href="{{ lang_url('zh') }}">{{ _("lang.zh") }}</a>
+          <a class="pill" href="{{ lang_url('en') }}">{{ _("lang.en") }}</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:4px 0 10px 0;">{{ "关于" if lang == "zh" else "About" }}</h2>
+        <div class="muted">{{ "构建ID" if lang == "zh" else "Build" }}: <code>{{ build_id }}</code></div>
+        {% if build_time %}<div class="muted">{{ "构建时间" if lang == "zh" else "Build time" }}: <code>{{ build_time }}</code></div>{% endif %}
+        <div class="muted" style="margin-top:10px;">{{ _("footer.admin_token") }} <code>{{ admin_token }}</code></div>
+      </section>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  function _normTab(h) {
+    var s = String(h || '').replace(/^#+/g, '').replace(/^\\s+|\\s+$/g, '');
+    if (!s) return '';
+    return s;
+  }
+  function _setActive(tab) {
+    var name = String(tab || '').replace(/^\\s+|\\s+$/g, '');
+    if (!name) name = 'model';
+    var btns = document.querySelectorAll('[data-settings-tab]');
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      var t = b.getAttribute('data-settings-tab') || '';
+      try { b.classList.toggle('active', t === name); } catch (e0) {}
+    }
+    var panels = document.querySelectorAll('[data-settings-panel]');
+    for (var j = 0; j < panels.length; j++) {
+      var p = panels[j];
+      var k = p.getAttribute('data-settings-panel') || '';
+      try { p.style.display = (k === name) ? '' : 'none'; } catch (e1) {}
+    }
+  }
+  function _init() {
+    var btns = document.querySelectorAll('[data-settings-tab]');
+    for (var i = 0; i < btns.length; i++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          var t = btn.getAttribute('data-settings-tab') || 'model';
+          try { location.hash = '#' + t; } catch (e0) { _setActive(t); }
+        });
+      })(btns[i]);
+    }
+    var cur = _normTab(location.hash) || 'model';
+    _setActive(cur);
+    window.addEventListener('hashchange', function () {
+      var t = _normTab(location.hash) || 'model';
+      _setActive(t);
+    });
+  }
+  _init();
+})();
+
+async function saveProvider() {
+  const form = document.getElementById('provider-form');
+  const fd = new FormData(form);
+  const payload = {};
+  for (const [k,v] of fd.entries()) payload[k] = v;
+  const res = await fetch('/api/settings?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ provider: payload })
+  });
+  const el = document.getElementById('provider-status');
+  if (res.ok) {
+    el.textContent = '{{ "已保存" if lang == "zh" else "Saved" }}';
+  } else {
+    el.textContent = await res.text();
+  }
+}
+
+async function saveDesktop() {
+  const form = document.getElementById('desktop-form');
+  const fd = new FormData(form);
+  const payload = {};
+  for (const [k,v] of fd.entries()) payload[k] = v;
+  const res = await fetch('/api/settings?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ desktop: payload })
+  });
+  const el = document.getElementById('desktop-status');
+  if (res.ok) el.textContent = '{{ "已保存（重启桌面端生效）" if lang == "zh" else "Saved (restart desktop app)" }}';
+  else el.textContent = await res.text();
+}
+
+async function saveUak() {
+  const form = document.getElementById('uak-form');
+  const fd = new FormData(form);
+  const payload = {};
+  for (const [k,v] of fd.entries()) payload[k] = v;
+  const res = await fetch('/api/settings?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ provider: payload })
+  });
+  const el = document.getElementById('uak-status');
+  if (res.ok) el.textContent = '{{ "已保存" if lang == "zh" else "Saved" }}';
+  else el.textContent = await res.text();
+}
+
+async function toggleSkill(id, enabled) {
+  const res = await fetch('/api/skills/' + encodeURIComponent(id) + '/enabled?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ enabled })
+  });
+  if (!res.ok) alert(await res.text());
+}
+
+async function installSkillUrl() {
+  const url = (document.getElementById('skill-url').value || '').trim();
+  const el = document.getElementById('skill-url-status');
+  el.textContent = '';
+  if (!url) return;
+  const res = await fetch('/api/skills/install_url?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ url })
+  });
+  if (res.ok) {
+    el.textContent = '{{ "已安装" if lang == "zh" else "Installed" }}';
+    location.reload();
+  } else {
+    el.textContent = await res.text();
+  }
+}
+
+async function reloadSkill(id) {
+  const res = await fetch('/api/skills/' + encodeURIComponent(id) + '/reload?token={{ admin_token }}', { method: 'POST' });
+  if (res.ok) location.reload();
+  else alert(await res.text());
+}
+
+function _setPolicySelects(policies) {
+  const map = policies || {};
+  const set = (id, val) => { const el=document.getElementById(id); if(el && val) el.value = val; };
+  set('pol-shell', map.shell || 'ask_once');
+  set('pol-fs_write', map.fs_write || 'ask_once');
+  set('pol-fs_delete', map.fs_delete || 'ask_once');
+  set('pol-browser_click', map.browser_click || 'ask_once');
+  set('pol-network', map.network || 'always_allow');
+  set('pol-mcp', map.mcp || 'ask_once');
+}
+
+async function loadPolicies() {
+  const ws = document.getElementById('pol-ws').value;
+  const res = await fetch('/api/workspace_policies?workspace_id=' + encodeURIComponent(ws));
+  if (!res.ok) return;
+  const data = await res.json();
+  _setPolicySelects(data.policies || {});
+}
+
+async function savePolicies() {
+  const ws = document.getElementById('pol-ws').value;
+  const policies = {
+    shell: document.getElementById('pol-shell').value,
+    fs_write: document.getElementById('pol-fs_write').value,
+    fs_delete: document.getElementById('pol-fs_delete').value,
+    browser_click: document.getElementById('pol-browser_click').value,
+    network: document.getElementById('pol-network').value,
+    mcp: document.getElementById('pol-mcp').value,
+  };
+  const res = await fetch('/api/workspace_policies?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ workspace_id: ws, policies })
+  });
+  const el = document.getElementById('pol-status');
+  if (res.ok) el.textContent = '{{ "已保存" if lang == "zh" else "Saved" }}';
+  else el.textContent = await res.text();
+}
+
+try { document.getElementById('pol-ws').addEventListener('change', loadPolicies); } catch (e0) {}
+_setPolicySelects({{ policies | tojson }});
+
+function _splitArgs(s) {
+  const raw = (s || '').trim();
+  if (!raw) return [];
+  return raw.split(/\\s+/g).filter(Boolean);
+}
+
+async function addMcp() {
+  const form = document.getElementById('mcp-form');
+  const fd = new FormData(form);
+  const id = (fd.get('id') || '').toString().trim();
+  let env = {};
+  try {
+    const raw = (fd.get('env_json') || '').toString().trim();
+    env = raw ? JSON.parse(raw) : {};
+  } catch (e0) { env = {}; }
+  const payload = {
+    name: fd.get('name') || '',
+    command: fd.get('command') || '',
+    args: _splitArgs(fd.get('args') || ''),
+    env: env,
+    healthcheck_args: _splitArgs(fd.get('healthcheck_args') || ''),
+    enabled: (fd.get('enabled') || '1') === '1'
+  };
+  const url = id ? ('/api/mcp_servers/' + encodeURIComponent(id) + '?token={{ admin_token }}') : ('/api/mcp_servers?token={{ admin_token }}');
+  const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const el = document.getElementById('mcp-status');
+  if (res.ok) location.reload();
+  else el.textContent = await res.text();
+}
+
+async function upsertMcp() { return addMcp(); }
+
+function editMcp(m) {
+  try {
+    const form = document.getElementById('mcp-form');
+    if (!form) return;
+    const id = (m && m.id) ? String(m.id) : '';
+    form.querySelector('[name=id]').value = id;
+    try { form.querySelector('[name=env_json]').value = JSON.stringify((m && m.env) ? m.env : {}); } catch (eEnv) { form.querySelector('[name=env_json]').value = '{}'; }
+    form.querySelector('[name=name]').value = (m && m.name) ? String(m.name) : '';
+    form.querySelector('[name=command]').value = (m && m.command) ? String(m.command) : '';
+    form.querySelector('[name=args]').value = (m && m.args && m.args.join) ? m.args.join(' ') : '';
+    form.querySelector('[name=healthcheck_args]').value = (m && m.healthcheck_args && m.healthcheck_args.join) ? m.healthcheck_args.join(' ') : '';
+    form.querySelector('[name=enabled]').value = (m && m.enabled) ? '1' : '0';
+    const submit = document.getElementById('mcp-submit');
+    const cancel = document.getElementById('mcp-cancel');
+    if (submit) submit.textContent = '{{ "保存" if lang == "zh" else "Save" }}';
+    if (cancel) cancel.style.display = '';
+    try { form.querySelector('[name=name]').focus(); } catch (e0) {}
+  } catch (e) {}
+}
+
+function cancelMcpEdit() {
+  try {
+    const form = document.getElementById('mcp-form');
+    if (!form) return;
+    form.querySelector('[name=id]').value = '';
+    form.querySelector('[name=env_json]').value = '';
+    form.querySelector('[name=name]').value = '';
+    form.querySelector('[name=command]').value = '';
+    form.querySelector('[name=args]').value = '';
+    form.querySelector('[name=healthcheck_args]').value = '';
+    form.querySelector('[name=enabled]').value = '1';
+    const submit = document.getElementById('mcp-submit');
+    const cancel = document.getElementById('mcp-cancel');
+    if (submit) submit.textContent = '{{ "添加" if lang == "zh" else "Add" }}';
+    if (cancel) cancel.style.display = 'none';
+  } catch (e) {}
+}
+
+async function setMcpEnabled(m, enabled) {
+  try {
+    const id = (m && m.id) ? String(m.id) : '';
+    if (!id) return;
+    const payload = {
+      name: (m && m.name) ? String(m.name) : '',
+      command: (m && m.command) ? String(m.command) : '',
+      args: (m && m.args) ? m.args : [],
+      env: (m && m.env) ? m.env : {},
+      healthcheck_args: (m && m.healthcheck_args) ? m.healthcheck_args : [],
+      enabled: !!enabled,
+    };
+    const res = await fetch('/api/mcp_servers/' + encodeURIComponent(id) + '?token={{ admin_token }}', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) alert(await res.text());
+  } catch (e) {}
+}
+
+async function deleteMcp(id) {
+  if (!confirm('Delete?')) return;
+  const res = await fetch('/api/mcp_servers/' + encodeURIComponent(id) + '?token={{ admin_token }}', { method: 'DELETE' });
+  if (res.ok) location.reload();
+  else alert(await res.text());
+}
+
+async function healthMcp(id) {
+  const res = await fetch('/api/mcp_servers/' + encodeURIComponent(id) + '/health?token={{ admin_token }}', { method: 'POST' });
+  if (!res.ok) { alert(await res.text()); return; }
+  const data = await res.json();
+  alert(JSON.stringify(data, null, 2));
+}
+
+async function openApiSite() {
+  const res = await fetch('/api/open_api_site?token={{ admin_token }}', { method: 'POST' });
+  if (!res.ok) {
+    alert(await res.text());
+  }
+}
+
+async function openLogsDir() {
+  const res = await fetch('/api/open_logs_dir?token={{ admin_token }}', { method: 'POST' });
+  if (!res.ok) {
+    alert(await res.text());
+  }
+}
+
+async function loadLogs() {
+  const sel = document.getElementById('log-name');
+  const name = sel ? sel.value : 'workbench.log';
+  const status = document.getElementById('log-status');
+  const pre = document.getElementById('log-preview');
+  try { if (status) status.textContent = '{{ "加载中…" if lang == "zh" else "Loading…" }}'; } catch (e) {}
+  try { if (pre) pre.textContent = ''; } catch (e2) {}
+  const res = await fetch('/api/logs/tail?token={{ admin_token }}&name=' + encodeURIComponent(name) + '&lines=260');
+  if (!res.ok) {
+    const t = await res.text();
+    try { if (status) status.textContent = t.slice(0, 180); } catch (e3) {}
+    return;
+  }
+  const data = await res.json();
+  const lines = (data && data.lines) ? data.lines : [];
+  try { if (pre) pre.textContent = (lines || []).join('\\n'); } catch (e5) {}
+  try { if (status) status.textContent = '{{ "已加载" if lang == "zh" else "Loaded" }}'; } catch (e6) {}
+}
+</script>
+{% endblock %}

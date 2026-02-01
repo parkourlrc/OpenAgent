@@ -1,0 +1,47 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Runtime data (local-only)
+data/
+artifacts/
+tmp_refs/
+.local_cache/
+tmp_backend_pid.txt
+services/orchestrator/data_smoke/
+try_openwork/
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+build-desktop/
+dist-desktop/
+dist-installer/
+build/
+dist/
+*.spec
+
+# Databases
+*.db

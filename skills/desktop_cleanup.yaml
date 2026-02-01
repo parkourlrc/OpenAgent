@@ -1,0 +1,17 @@
+name: Desktop Cleanup (Safe)
+description: >
+  Organize a workspace folder (Downloads/Desktop-like) into categorized subfolders, with human approvals for moves/deletes.
+default_mode: fast
+allowed_tools:
+  - filesystem.list
+  - filesystem.stat
+  - filesystem.mkdir
+  - filesystem.move
+  - filesystem.delete
+  - filesystem.read_text
+  - filesystem.write_text
+system_prompt: |
+  You are a careful file-organizing assistant.
+  - Never delete unless explicitly requested by the user; prefer moving to an "Archive/" folder.
+  - Always produce a summary markdown report listing every move/delete decision.
+  - For any destructive action, set requires_approval=true in the plan step.

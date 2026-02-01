@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ _("workspaces.title") }}</h1>
+
+<section class="card">
+  <h2>{{ _("workspaces.create") }}</h2>
+  <form method="post" action="/ui/workspaces/create">
+    <input type="hidden" name="token" value="{{ admin_token }}" />
+    <label>{{ _("workspaces.name") }}
+      <input name="name" required />
+    </label>
+    <label>{{ _("workspaces.path") }}
+      <input name="path" />
+    </label>
+    <button type="submit">{{ _("workspaces.create_btn") }}</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>{{ _("workspaces.all") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("common.id") }}</th><th>{{ _("workspaces.name") }}</th><th>{{ _("common.path") }}</th><th>{{ _("workspaces.created") }}</th></tr></thead>
+    <tbody>
+      {% for w in workspaces %}
+      <tr>
+        <td><code>{{ w.id }}</code></td>
+        <td>{{ w.name }}</td>
+        <td><code>{{ w.path }}</code></td>
+        <td>{{ w.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

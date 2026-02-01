@@ -1,0 +1,11 @@
+-r requirements.txt
+
+# Embedded Web UI (Windows uses WebView2 runtime)
+pywebview>=5,<6
+
+# System tray integration
+pystray>=0.19,<1
+
+# Build single-file .exe
+pyinstaller>=6,<7
+

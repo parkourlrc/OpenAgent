@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="compose compose-home">
+  <form id="run-form" method="post" action="/runs/auto?token={{ admin_token }}">
+    <input type="hidden" name="mode" value="fast" />
+    <input type="hidden" name="workspace_id" value="{{ default_workspace_id }}" />
+
+    <textarea id="goal" name="goal" rows="5" placeholder="{{ _('runs.goal.placeholder') }}"></textarea>
+
+    <div class="compose-row">
+      <div class="pill" title="{{ _('runs.workspace.help') }}">
+        {{ default_workspace_name or ("默认工作区" if lang == "zh" else "Default workspace") }}
+      </div>
+      <div class="compose-actions">
+        <button id="run-btn" class="run-btn" type="submit">{{ _("runs.start") }}</button>
+        <span id="run-status" class="muted" style="font-size:0.92rem;" data-no-copy="1"></span>
+      </div>
+    </div>
+
+    <div class="muted compose-hint">
+      {{ "提示：如果无法运行，请先到设置里配置模型（base_url / API Key）。" if lang == "zh" else "Tip: if runs fail, configure the model (base_url / API key) in Settings first." }}
+    </div>
+  </form>
+</section>
+
+<script>
+function startAutoRun(modeOverride) {
+  var goal = (document.getElementById('goal').value || '').replace(/^\\s+|\\s+$/g, '');
+  if (!goal) return;
+  var mode = modeOverride || 'fast';
+  var btn = document.getElementById('run-btn');
+  var status = document.getElementById('run-status');
+  btn.disabled = true;
+  try { btn.textContent = '{{ "开始中…" if lang == "zh" else "Starting…" }}'; } catch (e) {}
+  status.textContent = '';
+  var url = '/api/tasks/auto?token={{ admin_token }}';
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.timeout = 12000;
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    btn.disabled = false;
+    try { btn.textContent = '{{ _("runs.start") }}'; } catch (e) {}
+    if (xhr.status >= 200 && xhr.status < 300) {
+      try {
+        var data = JSON.parse(xhr.responseText || '{}');
+        status.textContent = '';
+        location.href = '/tasks/' + data.task_id;
+      } catch (e) {
+        status.textContent = '{{ "响应解析失败" if lang == "zh" else "Failed to parse response" }}';
+      }
+    } else {
+      status.textContent = (xhr.responseText || '').slice(0, 200) || ('HTTP ' + xhr.status);
+    }
+  };
+  xhr.ontimeout = function () {
+    btn.disabled = false;
+    try { btn.textContent = '{{ _("runs.start") }}'; } catch (e) {}
+    status.textContent = '{{ "请求超时，请检查网络或模型配置" if lang == "zh" else "Timed out. Check network/model settings." }}';
+  };
+  xhr.onerror = function () {
+    btn.disabled = false;
+    try { btn.textContent = '{{ _("runs.start") }}'; } catch (e) {}
+    status.textContent = '{{ "网络错误/后端未就绪" if lang == "zh" else "Network error / backend not ready" }}';
+  };
+  try { xhr.send(JSON.stringify({ goal: goal, mode: mode })); }
+  catch (e) {
+    btn.disabled = false;
+    try { btn.textContent = '{{ _("runs.start") }}'; } catch (e2) {}
+    status.textContent = '{{ "发送失败" if lang == "zh" else "Failed to send request" }}';
+  }
+}
+
+(function () {
+  try { document.getElementById('goal').focus(); } catch (e0) {}
+  var form = document.getElementById('run-form');
+  if (!form) return;
+  if (!window.XMLHttpRequest) return;
+  form.onsubmit = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    try { startAutoRun(); } catch (err) { return true; }
+    return false;
+  };
+})();
+</script>
+{% endblock %}

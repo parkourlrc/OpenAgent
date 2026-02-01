@@ -1,0 +1,64 @@
+<html lang="{{ 'zh-CN' if lang == 'zh' else 'en' }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ title or _("app.name") }}</title>
+  <link rel="icon" href="/api/icon.png?size=64" type="image/png" />
+  <link rel="stylesheet" href="/static/vendor/highlight-dark.min.css?v={{ static_version }}" />
+  <link rel="stylesheet" href="/static/style.css?v={{ static_version }}" />
+</head>
+<body data-admin-token="{{ admin_token }}" data-delete-confirm="{{ _('history.delete_confirm') }}" data-delete-failed="{{ _('history.delete_failed') }}" data-copy-label="{{ _('common.copy') }}" data-copied-label="{{ _('common.copied') }}" data-copy-failed="{{ _('common.copy_failed') }}" data-sources-label="{{ _('common.sources') }}" data-cite-loading="{{ _('common.loading') }}" data-cite-unverified="{{ _('citations.unverified') }}" data-cite-no-match="{{ _('citations.no_match') }}" data-cite-chunk-not-found="{{ _('citations.chunk_not_found') }}" data-cite-warn-unverified-prefix="{{ _('citations.warn_unverified_prefix') }}" data-cite-warn-reasons-prefix="{{ _('citations.warn_reasons_prefix') }}">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="side-top">
+        <div class="side-brand">
+          <a class="brand-link" href="/">
+            <img class="brand-icon" src="/api/icon.png?size=32" alt="icon" />
+            <div class="logo">OpenAgent</div>
+          </a>
+          <div class="side-brand-actions">
+            <button id="sidebar-toggle" class="icon-btn" type="button" aria-label="{{ _('sidebar.toggle') }}" title="{{ _('sidebar.toggle') }}" data-no-copy="1">≡</button>
+            <a class="icon-btn" href="/settings" aria-label="Settings" title="Settings" data-no-copy="1">⚙</a>
+          </div>
+        </div>
+        <div class="side-actions">
+          <a class="primary-btn" href="/">
+            <span class="btn-icon" data-no-copy="1">＋</span>
+            <span class="btn-text">{{ "新建任务" if lang == "zh" else "New task" }}</span>
+          </a>
+        </div>
+        <form class="search" method="get" action="/">
+          <input name="q" value="{{ q or '' }}" placeholder="{{ '搜索' if lang == 'zh' else 'Search' }}" />
+          <button type="submit" aria-label="Search" data-no-copy="1">🔎</button>
+        </form>
+      </div>
+      <div class="side-list">
+        <div class="side-section-title">{{ "任务记录" if lang == 'zh' else 'History' }}</div>
+        {% for t in (sidebar_tasks or []) %}
+          <div class="task-item {{ 'active' if current_task_id == t.id else '' }}">
+            <a class="task-link" href="/tasks/{{ t.id }}">
+              <div class="task-item-row">
+                <div class="title">{{ t.title or t.goal }}</div>
+                <span class="status {{ t.status }}">{{ t.status }}</span>
+              </div>
+            </a>
+            <button class="task-del" type="button" data-task-id="{{ t.id }}" aria-label="{{ '删除' if lang == 'zh' else 'Delete' }}" title="{{ '删除' if lang == 'zh' else 'Delete' }}" data-no-copy="1">🗑</button>
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <div id="sidebar-splitter" class="splitter splitter-vertical" data-no-copy="1"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <!-- reserved for future: account / notifications -->
+      </header>
+      <div class="container">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+  <script src="/static/app.js?v={{ static_version }}"></script>
+</body>
+</html>

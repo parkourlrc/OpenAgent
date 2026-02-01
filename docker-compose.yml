@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    command: ["--config", "/app/config.yaml", "--detailed_debug"]
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml:ro
+
+  orchestrator:
+    build: ./services/orchestrator
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    environment:
+      # Ensure we always call through the OpenAI-compatible gateway (LiteLLM)
+      OPENAI_BASE_URL: http://litellm:4000/v1
+      SKILLS_DIR: /app/skills
+    volumes:
+      - ./data:/app/data
+      - ./skills:/app/skills:ro
+    depends_on:
+      - litellm

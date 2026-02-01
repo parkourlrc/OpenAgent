@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ _("skills.title") }}</h1>
+
+<section class="card">
+  <h2>{{ _("skills.import") }}</h2>
+  <form method="post" action="/ui/skills/import">
+    <input type="hidden" name="token" value="{{ admin_token }}" />
+    <label>{{ _("skills.yaml_path") }}
+      <input name="yaml_path" value="/app/skills/deep_research.yaml" required />
+    </label>
+    <button type="submit">{{ _("skills.import_btn") }}</button>
+  </form>
+  <p class="hint">In docker-compose, ./skills is mounted into /app/skills.</p>
+</section>
+
+<section class="card">
+  <h2>{{ "从 URL 安装" if lang == "zh" else "Install from URL" }}</h2>
+  <div class="muted" style="margin-bottom:8px;">{{ "下载 YAML 并导入为 Skill（保存到 DATA_DIR/skills_downloads）。" if lang == "zh" else "Downloads a YAML and imports it as a Skill (saved to DATA_DIR/skills_downloads)." }}</div>
+  <form onsubmit="event.preventDefault(); installSkillUrl();">
+    <input id="skill-url" placeholder="https://raw.githubusercontent.com/.../skill.yaml" />
+    <button type="submit">{{ "安装" if lang == "zh" else "Install" }}</button>
+    <span id="skill-url-status" class="muted" style="margin-left:10px;"></span>
+  </form>
+</section>
+
+<section class="card">
+  <h2>{{ _("skills.all") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("common.id") }}</th><th>{{ _("common.name") }}</th><th>{{ "启用" if lang == "zh" else "Enabled" }}</th><th>{{ _("skills.default_mode") }}</th><th>{{ _("skills.allowed_tools") }}</th><th>{{ _("skills.description") }}</th></tr></thead>
+    <tbody>
+      {% for s in skills %}
+      <tr>
+        <td><code>{{ s.id }}</code></td>
+        <td>{{ s.name }}</td>
+        <td>
+          <label style="display:flex; align-items:center; gap:8px; margin:0;">
+            <input type="checkbox" {{ 'checked' if s.enabled else '' }} onchange="toggleSkill({{ s.id | tojson }}, this.checked)" />
+            <span class="muted" style="font-size:0.85rem;">
+              {% if lang == "zh" %}{{ "已启用" if s.enabled else "已禁用" }}{% else %}{{ "on" if s.enabled else "off" }}{% endif %}
+            </span>
+          </label>
+        </td>
+        <td>{{ s.default_mode }}</td>
+        <td class="tools">
+          {% for t in (s.allowed_tools or []) %}
+            <code>{{ t }}</code>
+          {% endfor %}
+          {% if not s.allowed_tools %}<span class="muted">{{ _("skills.all_tools") }}</span>{% endif %}
+        </td>
+        <td>{{ s.description }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>{{ _("skills.tools") }}</h2>
+  <ul class="tool-list">
+    {% for t in tools %}
+      <li><code>{{ t.name }}</code> — {{ t.description }}</li>
+    {% endfor %}
+  </ul>
+</section>
+<script>
+async function toggleSkill(id, enabled) {
+  const res = await fetch('/api/skills/' + encodeURIComponent(id) + '/enabled?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ enabled })
+  });
+  if (!res.ok) alert(await res.text());
+}
+
+async function installSkillUrl() {
+  const url = (document.getElementById('skill-url').value || '').trim();
+  const el = document.getElementById('skill-url-status');
+  el.textContent = '';
+  if (!url) return;
+  const res = await fetch('/api/skills/install_url?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ url })
+  });
+  if (res.ok) {
+    el.textContent = '{{ "已安装" if lang == "zh" else "Installed" }}';
+    location.reload();
+  } else {
+    el.textContent = await res.text();
+  }
+}
+</script>
+{% endblock %}

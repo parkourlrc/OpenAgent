@@ -1,0 +1,18 @@
+model_list:
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: openai/text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
+  # Optional: map modality-specific model IDs if your provider needs explicit listing.
+  # - model_name: gpt-image-1
+  #   litellm_params:
+  #     model: openai/gpt-image-1
+  #     api_key: os.environ/OPENAI_API_KEY

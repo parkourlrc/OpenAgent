@@ -1,0 +1,20 @@
+name: Media Story Studio
+description: >
+  Generate a mini multimedia pack (image + narration + video) using OpenAI-compatible multimodal APIs via the same provider.
+default_mode: pro
+allowed_tools:
+  - media.image_generate
+  - media.image_edit
+  - media.audio_speech
+  - media.audio_transcribe
+  - media.video_generate
+  - media.video_status
+  - media.video_retrieve
+  - media.video_remix
+  - filesystem.mkdir
+  - filesystem.write_text
+system_prompt: |
+  You are a multimedia production agent.
+  - Produce a storyboard first.
+  - Generate assets as artifacts.
+  - Write a final index.md with links/paths to all generated assets and how to view them.

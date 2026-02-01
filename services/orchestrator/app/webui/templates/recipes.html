@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ "配方/模板" if lang == "zh" else "Recipes" }}</h1>
+
+<section class="card">
+  <h2>{{ "新建配方" if lang == "zh" else "Create recipe" }}</h2>
+  <div class="muted" style="margin-bottom:10px;">
+    {{ "goal_template 支持 {{var}} 占位符；form 用 JSON 描述输入表单（可留空）。" if lang == "zh" else "goal_template supports {{var}} placeholders; form is a JSON object describing inputs (optional)." }}
+  </div>
+  <form id="recipe-create" onsubmit="event.preventDefault(); createRecipe();">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+      <label>{{ "名称" if lang == "zh" else "Name" }}<input name="name" required /></label>
+      <label>{{ "默认模式" if lang == "zh" else "Default mode" }}
+        <select name="default_mode">
+          <option value="fast">fast</option>
+          <option value="pro">pro</option>
+        </select>
+      </label>
+    </div>
+    <label>{{ "描述" if lang == "zh" else "Description" }}<input name="description" /></label>
+    <label>goal_template<textarea name="goal_template" rows="4" required></textarea></label>
+    <label>form (JSON)<textarea name="form_json" rows="4" placeholder='{"fields":[{"key":"topic","label":"Topic","type":"text"}]}'></textarea></label>
+    <label>{{ "启用" if lang == "zh" else "Enabled" }}
+      <select name="enabled"><option value="1">{{ "是" if lang == "zh" else "Yes" }}</option><option value="0">{{ "否" if lang == "zh" else "No" }}</option></select>
+    </label>
+    <button type="submit">{{ "创建" if lang == "zh" else "Create" }}</button>
+    <span id="recipe-create-status" class="muted" style="margin-left:10px;"></span>
+  </form>
+</section>
+
+<section class="card">
+  <h2>{{ "全部配方" if lang == "zh" else "All recipes" }}</h2>
+  {% if not recipes %}
+    <div class="muted">{{ "暂无配方" if lang == "zh" else "No recipes yet." }}</div>
+  {% endif %}
+  {% for r in recipes %}
+    <div class="card" style="background:#0b1020;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div style="font-weight:700;">{{ r.name }} <span class="muted" style="font-weight:400;">({{ r.id }})</span></div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" onclick="saveRecipe({{ r.id | tojson }})">{{ "保存" if lang == "zh" else "Save" }}</button>
+          <button type="button" onclick="deleteRecipe({{ r.id | tojson }})">{{ "删除" if lang == "zh" else "Delete" }}</button>
+        </div>
+      </div>
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+        <label>{{ "名称" if lang == "zh" else "Name" }}<input id="r-name-{{ r.id }}" value="{{ r.name }}" /></label>
+        <label>{{ "默认模式" if lang == "zh" else "Default mode" }}
+          <select id="r-mode-{{ r.id }}">
+            <option value="fast" {{ 'selected' if r.default_mode == 'fast' else '' }}>fast</option>
+            <option value="pro" {{ 'selected' if r.default_mode == 'pro' else '' }}>pro</option>
+          </select>
+        </label>
+      </div>
+      <label>{{ "描述" if lang == "zh" else "Description" }}<input id="r-desc-{{ r.id }}" value="{{ r.description or '' }}" /></label>
+      <label>goal_template<textarea id="r-goal-{{ r.id }}" rows="4">{{ r.goal_template }}</textarea></label>
+      <label>form (JSON)<textarea id="r-form-{{ r.id }}" rows="4">{{ (r.form or {}) | tojson }}</textarea></label>
+      <label>{{ "启用" if lang == "zh" else "Enabled" }}
+        <select id="r-enabled-{{ r.id }}"><option value="1" {{ 'selected' if r.enabled else '' }}>{{ "是" if lang == "zh" else "Yes" }}</option><option value="0" {{ 'selected' if not r.enabled else '' }}>{{ "否" if lang == "zh" else "No" }}</option></select>
+      </label>
+      <div class="muted">{{ "更新" if lang == "zh" else "Updated" }}: {{ r.updated_at }}</div>
+    </div>
+  {% endfor %}
+</section>
+
+<script>
+function _parseJson(s) {
+  try {
+    const t = (s || '').trim();
+    if (!t) return {};
+    return JSON.parse(t);
+  } catch (e) {
+    throw new Error('Invalid JSON');
+  }
+}
+
+async function createRecipe() {
+  const form = document.getElementById('recipe-create');
+  const fd = new FormData(form);
+  const payload = {
+    name: fd.get('name'),
+    description: fd.get('description') || '',
+    goal_template: fd.get('goal_template'),
+    default_mode: fd.get('default_mode') || 'fast',
+    enabled: (fd.get('enabled') || '1') === '1',
+    form: _parseJson(fd.get('form_json') || ''),
+  };
+  const res = await fetch('/api/recipes?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const el = document.getElementById('recipe-create-status');
+  if (res.ok) location.reload();
+  else el.textContent = await res.text();
+}
+
+async function saveRecipe(id) {
+  const payload = {
+    name: document.getElementById('r-name-' + id).value,
+    description: document.getElementById('r-desc-' + id).value,
+    goal_template: document.getElementById('r-goal-' + id).value,
+    default_mode: document.getElementById('r-mode-' + id).value,
+    enabled: document.getElementById('r-enabled-' + id).value === '1',
+    form: _parseJson(document.getElementById('r-form-' + id).value),
+  };
+  const res = await fetch('/api/recipes/' + encodeURIComponent(id) + '?token={{ admin_token }}', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) alert(await res.text());
+  else location.reload();
+}
+
+async function deleteRecipe(id) {
+  if (!confirm('Delete?')) return;
+  const res = await fetch('/api/recipes/' + encodeURIComponent(id) + '?token={{ admin_token }}', { method:'DELETE' });
+  if (!res.ok) alert(await res.text());
+  else location.reload();
+}
+</script>
+{% endblock %}
+

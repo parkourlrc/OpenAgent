@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="task-root" data-task-id="{{ task.id }}" data-admin-token="{{ admin_token }}" data-goal="{{ task.goal }}"></div>
+
+<div class="wb2-grid right-collapsed" id="wb-grid">
+  <div class="wb2-left">
+    <div class="wb2-taskbar">
+      <div class="wb2-taskbar-row">
+        <div class="wb2-task-title">{{ task.title or task.goal }}</div>
+        <span class="status {{ task.status }}" data-task-status>{{ task.status }}</span>
+        <span id="net-status" class="muted wb2-net-status" data-no-copy="1"></span>
+        <div class="wb2-taskbar-spacer" data-no-copy="1"></div>
+        <form id="task-cancel-form" method="post" action="/ui/tasks/{{ task.id }}/cancel" data-canceling="{{ _('task.canceling') }}" class="wb2-taskbar-actions">
+          <input type="hidden" name="token" value="{{ admin_token }}" />
+          <button id="task-cancel" type="submit" class="danger-btn">{{ _("task.cancel") }}</button>
+          <span id="task-cancel-status" class="muted" style="font-size:0.92rem;" data-no-copy="1"></span>
+        </form>
+      </div>
+      {% if task.error %}
+        <div class="wb2-error">
+          <pre class="pre error">{{ task.error }}</pre>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="wb2-thread" id="wb-thread">
+      <div id="chat" class="chat" data-empty="{{ _('chat.empty') }}"></div>
+
+      <details class="wb2-steps" open>
+        <summary class="wb2-steps-title">{{ _("task.plan_execution") }}</summary>
+        <div id="timeline" class="steps-list"></div>
+      </details>
+
+      {% set pending = (steps | selectattr("status", "equalto", "waiting_approval") | list) %}
+      {% if pending and pending|length > 0 %}
+        {% set s = pending[0] %}
+        <section class="card wb2-approval">
+          <div class="wb-section-title">{{ _("approvals.required") }}</div>
+          <div class="muted" style="margin-top:6px;"><code>{{ s.tool }}</code></div>
+          <form method="post" action="/ui/tasks/{{ task.id }}/approve/{{ s.id }}" style="margin-top:10px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <input type="hidden" name="token" value="{{ admin_token }}" />
+            <label style="min-width:200px;">{{ _("task.decision") }}
+              <select name="decision">
+                <option value="approve">{{ _("approvals.approve") }}</option>
+                <option value="reject">{{ _("approvals.reject") }}</option>
+              </select>
+            </label>
+            <label style="flex:1; min-width:220px;">{{ _("task.reason") }}
+              <input name="reason" />
+            </label>
+            <button type="submit">{{ _("task.submit") }}</button>
+          </form>
+        </section>
+      {% endif %}
+    </div>
+
+    <form id="chat-form" method="post" action="/ui/tasks/{{ task.id }}/continue" class="wb2-compose" data-sending="{{ _('chat.sending') }}">
+      <input type="hidden" name="token" value="{{ admin_token }}" />
+      <textarea id="chat-input" name="message" rows="3" placeholder="{{ _('chat.placeholder') }}" data-no-copy="1"></textarea>
+      <div class="wb2-compose-row">
+        <button id="chat-send" type="submit">{{ _("chat.send") }}</button>
+        <span id="chat-status" class="muted" style="font-size:0.92rem;" data-no-copy="1"></span>
+      </div>
+    </form>
+  </div>
+
+  <div id="wb-splitter" class="splitter splitter-vertical wb2-splitter" data-no-copy="1"></div>
+
+  <div class="wb2-right" id="wb-right">
+    <button id="wb-right-toggle" class="wb-right-toggle" type="button" data-no-copy="1"
+      aria-label="{{ _('sidebar.toggle') }}" title="{{ _('sidebar.toggle') }}"></button>
+
+    <div class="wb2-right-body" id="wb-right-body">
+      <div class="wb2-preview-top">
+        <div class="wb2-filebar">
+          <select id="wb-file-select" class="wb2-file-select" data-no-copy="1"></select>
+          <div class="wb2-file-actions">
+            <button id="wb-file-open" type="button" class="icon-btn" data-no-copy="1">{{ "打开" if lang == "zh" else "Open" }}</button>
+            <button id="wb-file-reveal" type="button" class="icon-btn" data-no-copy="1">{{ "目录" if lang == "zh" else "Folder" }}</button>
+            <a id="wb-file-download" class="icon-btn" href="#" data-no-copy="1">{{ "下载" if lang == "zh" else "Download" }}</a>
+            <button id="wb-ppt-save" type="button" class="primary-btn" style="display:none;" data-no-copy="1">{{ "保存" if lang == "zh" else "Save" }}</button>
+          </div>
+        </div>
+        <div class="muted wb2-file-hint" id="wb-file-hint">{{ _("sidebar.no_output") }}</div>
+      </div>
+
+      <div class="wb2-viewer" id="wb-viewer"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
