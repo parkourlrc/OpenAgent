@@ -1,0 +1,2 @@
+dist-desktop/OpenAgentWorkbench.exe filter=lfs diff=lfs merge=lfs -text
+dist-installer/OpenAgentWorkbench-Setup-*.exe filter=lfs diff=lfs merge=lfs -text

@@ -37,8 +37,10 @@ logs/
 
 # Build outputs
 build-desktop/
-dist-desktop/
-dist-installer/
+dist-desktop/**
+!dist-desktop/OpenAgentWorkbench.exe
+dist-installer/**
+!dist-installer/OpenAgentWorkbench-Setup-*.exe
 build/
 dist/
 *.spec
